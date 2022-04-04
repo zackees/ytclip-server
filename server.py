@@ -50,7 +50,7 @@ def apiDefault() -> Tuple[str, int, dict]:
     now_time = datetime.datetime.now()
     headers = {"content-type": "text/plain; charset=utf-8"}
     msg = "running\n"
-    msg += f"Example: localhost:5000/clip\n"
+    msg += f"Example: localhost/clip\n"
     msg += f"Launched at         {STARTUP_DATETIME}"
     msg += f"\nCurrent utc time:   {datetime.datetime.utcnow()}"
     msg += f"\nCurrent local time: {now_time}"
