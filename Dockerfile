@@ -1,7 +1,5 @@
-FROM python:3.8
-
-ADD server.py .
-
+FROM python:3.8-slim-buster
+COPY . .
 RUN pip install ytclip flask
-
-CMD ["python", "server.py"]
+EXPOSE 5000
+CMD ["python", "./server.py"]

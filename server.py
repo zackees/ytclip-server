@@ -7,7 +7,7 @@ import traceback
 
 import subprocess
 
-DEFAULT_PORT = 5000
+DEFAULT_PORT = 80
 
 STARTUP_DATETIME = datetime.datetime.now()
 
