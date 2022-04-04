@@ -4,5 +4,5 @@ services:
   app:
     build: .
     ports:
-      - published: 5001
+      - published: 51285
         target: 80
