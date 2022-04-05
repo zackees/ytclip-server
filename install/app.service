@@ -1,0 +1,11 @@
+[Unit]
+Description=YTClip Webserver
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python ~/ytclip-server/app/run.py
+Restart=always
+User=nobody
+
+[Install]
+WantedBy=multi-user.target
