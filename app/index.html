@@ -1,10 +1,32 @@
 <html>
 
+<style>
+    @keyframes spinner {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .spinner:before {
+        content: '';
+        box-sizing: border-box;
+        position: absolute;
+        top: 50%;
+        left: 10%;
+        width: 20px;
+        height: 20px;
+        margin-top: -10px;
+        margin-left: -10px;
+        border-radius: 50%;
+        border-top: 2px solid #07d;
+        border-right: 2px solid transparent;
+        animation: spinner .6s linear infinite;
+    }
+</style>
 
 <body>
     <!-- import jquery -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <div id="main_content"></div>
 
     <div>
         <H1>YTClip</H1>
@@ -19,6 +41,10 @@
         <input type="text" name="end" id="end_timestamp" placeholder="0:32" size="8"><br>
         <input type="submit" value="Submit" id="submit_button">
     </div>
+
+    <div id="spinner"></div>
+    <div id="main_content"></div>
+
 
     <script>
         // function to download large binary data
@@ -38,9 +64,11 @@
             jQuery.get("/clip/status/" + token, function (msg) {
                 dom.innerText = msg;
                 if (msg == "error aborted") {
+                    document.getElementById("spinner").classList.remove("spinner");
                     return;
                 }
                 if (msg == "ready for download") {
+                    document.getElementById("spinner").classList.remove("spinner");
                     download_url_as_binary("/clip/download/" + token, function (data) {
                         var blob = new Blob([data], {
                             type: "video/mp4"
@@ -58,6 +86,7 @@
         }
 
         document.getElementById("submit_button").onclick = function () {
+            document.getElementById("spinner").classList.add("spinner");
             var url = document.getElementsByName("url")[0].value;
             var start = document.getElementsByName("start")[0].value;
             var end = document.getElementsByName("end")[0].value;
