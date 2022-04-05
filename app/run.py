@@ -10,7 +10,8 @@ import time
 HERE = os.path.dirname(__file__)
 
 # Every 60 minutes
-_TIME_BEFORE_RECHECK = 60 * 60
+# _TIME_BEFORE_RECHECK = 60 * 60
+_TIME_BEFORE_RECHECK = 10
 
 
 def _check_repo() -> bool:
@@ -35,7 +36,7 @@ def main() -> None:
             flask_proc.wait()
             # force a git pull
             cmd = ["git", "pull"]
-            subprocess.check_output(cmd, cwd=HERE)
+            subprocess.call(cmd, cwd=HERE)
             flask_proc = subprocess.Popen(cmd, env=env, cwd=HERE)
 
 
