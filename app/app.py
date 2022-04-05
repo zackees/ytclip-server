@@ -102,7 +102,7 @@ def api_clip() -> Tuple[str, int, dict]:
 def main() -> None:
     """Run the flask app."""
     port = int(os.environ.get("FLASK_PORT", DEFAULT_PORT))
-    app.run(port=port, debug=False, threaded=True)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
 
 
 if __name__ == "__main__":
