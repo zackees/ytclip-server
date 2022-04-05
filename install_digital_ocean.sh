@@ -1,3 +1,2 @@
-apt install -y python-is-python3
-apt install -y pip
+apt install -y python-is-python3 python3-pip
 python -m pip install -r requierements.txt
