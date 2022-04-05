@@ -14,6 +14,7 @@ from flask import Flask, Response, request, send_from_directory
 from flask_executor import Executor
 
 DEFAULT_PORT = 80
+MAX_WORKERS = 8
 
 STARTUP_DATETIME = datetime.datetime.now()
 
@@ -34,7 +35,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 # Note, app must be instantiated here because the functions
 # below bind to it.
 app = Flask(__name__)
-executor = Executor(app)
+executor = Executor(app, MAX_WORKERS=8)
 
 
 def get_file(filename):  # pragma: no cover
