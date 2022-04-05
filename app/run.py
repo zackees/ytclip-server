@@ -14,10 +14,14 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 _TIME_BEFORE_RECHECK = 10
 
 
+def git_pull() -> None:
+    subprocess.call(["git", "pull"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=HERE)
+
+
 def main() -> None:
     """Main entry point."""
     # Start off by updating to the latest version of the repo.
-    subprocess.call(["git", "pull"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=HERE)
+    git_pull()
     # Setup the environment
     env = {"FLASK_APP": "app/app.py", "FLASK_ENV": "development"}
     env.update(os.environ)
@@ -27,7 +31,7 @@ def main() -> None:
         flask_proc = subprocess.Popen(cmd, env=env, cwd=os.path.dirname(HERE))
         while True:
             time.sleep(_TIME_BEFORE_RECHECK)
-            subprocess.call(["git", "pull"], cwd=HERE)
+            git_pull()
     finally:
         flask_proc.terminate()
 
