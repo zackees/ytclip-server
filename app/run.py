@@ -24,14 +24,19 @@ def _check_repo() -> bool:
 
 def main() -> None:
     """Main entry point."""
+    # Start off by updating to the latest version of the repo.
+    subprocess.call(["git", "pull"], cwd=HERE)
+    # Setup the environment
     env = {"FLASK_APP": "app.py", "FLASK_ENV": "development"}
     env.update(os.environ)
+    # Start the flask app
     cmd = ["flask", "run", "--host", "0.0.0.0", "--port", "80"]
     flask_proc = subprocess.Popen(cmd, env=env, cwd=HERE)
 
     while True:
         time.sleep(_TIME_BEFORE_RECHECK)
         if _check_repo():
+            # The repo has changed so it and the flask app need to be updated.
             flask_proc.kill()
             flask_proc.wait()
             # force a git pull
