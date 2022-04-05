@@ -4,7 +4,7 @@ After=network.target
 StartLimitIntervalSec=5
 
 [Service]
-ExecStart=/usr/bin/sh -c ls
+ExecStart=/usr/bin/sh /root/ytclip-server/run.sh
 Restart=always
 User=nobody
 
