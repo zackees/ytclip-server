@@ -11,8 +11,8 @@ from datetime import datetime
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 # Every 60 minutes
-_TIME_BEFORE_RECHECK = 60 * 60
-# _TIME_BEFORE_RECHECK = 10
+# _TIME_BEFORE_RECHECK = 60 * 60
+_TIME_BEFORE_RECHECK = 10
 
 
 def _check_repo() -> bool:
