@@ -79,9 +79,11 @@
         const domMainContent = document.getElementById('main_content');
 
         function updateButtons(event) {
-            const url_ok = domInputUrl.value.length > 0;
-            const start_timestamp_ok = domStartTimestamp.value.length > 0;
-            const end_timestamp_ok = domEndTimestamp.value.length > 0;
+            const regex_timestamp = /^([\d]\:)?([\d]\:)?[\d]+$/;
+            const url_regex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/;
+            const url_ok = domInputUrl.value.trim().length > 0 && url_regex.test(domInputUrl.value.trim());
+            const start_timestamp_ok = domStartTimestamp.value.trim().length > 0 && regex_timestamp.test(domStartTimestamp.value.trim());
+            const end_timestamp_ok = domEndTimestamp.value.trim().length > 0 && regex_timestamp.test(domEndTimestamp.value.trim());
             const all_ok = url_ok && start_timestamp_ok && end_timestamp_ok;
             domSubmitButton.disabled = !all_ok;
         }
@@ -136,9 +138,9 @@
         }
 
         document.getElementById("submit_button").onclick = function () {
-            var url = document.getElementsByName("url")[0].value;
-            var start = document.getElementsByName("start")[0].value;
-            var end = document.getElementsByName("end")[0].value;
+            var url = document.getElementsByName("url")[0].value.trim();
+            var start = document.getElementsByName("start")[0].value.trim();
+            var end = document.getElementsByName("end")[0].value.trim();
             // validate that the url is valid using a regex
             document.getElementById("spinner").classList.add("spinner");
             jQuery.post("/clip", {
