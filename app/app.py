@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 import traceback
+from email.mime import base
 from threading import Timer
 from typing import Tuple
 
@@ -46,12 +47,13 @@ def gabage_collect() -> None:
                 file_age_seconds = file_age(file_path)
                 if file_age_seconds > GARGABE_EXPIRATION_SECONDS:
                     try:
+                        basename = os.path.basename(file_path)
+                        token = os.path.splitext(basename)[0]
                         os.remove(file_path)
+                        del active_tokens[token]
                     except Exception:  # pylint: disable=broad-except
                         log_error(traceback.format_exc())
 
-
-THREADED_GARBAGE_COLLECTOR = Timer(GARGABE_EXPIRATION_SECONDS / 2, gabage_collect, ("arg1", "arg2"))
 
 active_tokens = {}
 
@@ -63,7 +65,9 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 # Note, app must be instantiated here because the functions
 # below bind to it.
 app = Flask(__name__)
-executor = Executor(app, MAX_WORKERS=8)
+app.config["EXECUTOR_MAX_WORKERS"] = MAX_WORKERS
+executor = Executor(app)
+THREADED_GARBAGE_COLLECTOR = Timer(GARGABE_EXPIRATION_SECONDS / 2, gabage_collect, ("arg1", "arg2"))
 
 
 def get_file(filename):  # pragma: no cover
