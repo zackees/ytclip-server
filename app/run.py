@@ -10,14 +10,14 @@ import time
 HERE = os.path.dirname(__file__)
 
 # Every 60 minutes
-# _TIME_BEFORE_RECHECK = 60 * 60
-_TIME_BEFORE_RECHECK = 10
+_TIME_BEFORE_RECHECK = 60 * 60
+# _TIME_BEFORE_RECHECK = 10
 
 
 def _check_repo() -> bool:
     """Check if the repo has changed."""
     cmd = ["git", "diff", "--quiet", "HEAD"]
-    proc = subprocess.Popen(cmd, cwd=HERE)
+    proc = subprocess.Popen(cmd, cwd=HERE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     proc.wait()
     return proc.returncode == 0
 
