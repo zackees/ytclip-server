@@ -3,7 +3,7 @@ Description=YTClip Webserver
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python /root/ytclip-server/app/run.py
+ExecStart=/root/ytclip-server/run.sh
 Restart=always
 User=nobody
 

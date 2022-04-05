@@ -4,3 +4,4 @@ cp /root/ytclip-server/install/app.service /etc/systemd/system/app.service
 sudo systemctl daemon-reload
 sudo systemctl enable app.service
 sudo systemctl start app.service
+sudo systemctl status app.service
