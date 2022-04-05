@@ -8,7 +8,7 @@ import subprocess
 import time
 from datetime import datetime
 
-HERE = os.path.dirname(__file__)
+HERE = os.path.abspath(os.path.dirname(__file__))
 
 # Every 60 minutes
 _TIME_BEFORE_RECHECK = 60 * 60
