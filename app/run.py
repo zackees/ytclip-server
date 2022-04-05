@@ -16,7 +16,9 @@ _TIME_BEFORE_RECHECK = 60 * 60
 
 def git_pull() -> None:
     """Silently updates the repo to the latest version."""
-    subprocess.call(["git", "pull"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=HERE)
+    subprocess.call(
+        ["git", "pull"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=HERE
+    )
 
 
 def main() -> None:
