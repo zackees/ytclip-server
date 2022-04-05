@@ -1,14 +1,86 @@
 <html>
-  <body>
 
-  <form action="/clip" method="get">
+
+
+
+<body>
+    <!-- import jquery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <div id="main_content"></div>
+
+    <script>
+
+        // function to download large binary data
+        function download_url_as_binary(url, callback) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function (e) {
+                if (this.status == 200) {
+                    callback(this.response);
+                }
+            };
+            xhr.send();
+        }
+
+
+        const dom = document.getElementById("main_content");
+        function runLoop(token) {
+            jQuery.get("/clip/status/" + token, function (msg) {
+                dom.innerText = msg;
+                if (msg == "ready for download") {
+                    download_url_as_binary("/clip/download/" + token, function (data) {
+                        var blob = new Blob([data], {
+                            type: "video/mp4"
+                        });
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement("a");
+                        a.href = url;
+                        a.download = "clip.mp4";
+                        a.click();
+                    });
+                    return;
+                }
+                setTimeout(function () { runLoop(token); }, 1000);
+            });
+
+        }
+
+
+    </script>
+
+
+
+
+
     <!-- generate a form to take in url -->
     <input type="text" name="url" placeholder="Enter URL"><br>
     <!-- start_timestamp -->
     <input type="text" name="start" placeholder="Enter start timestamp"><br>
     <!-- end_timestamp -->
     <input type="text" name="end" placeholder="Enter end timestamp"><br>
-    <input type="submit" value="Submit">
-  </form>
+    <input type="submit" value="Submit" id="submit_button">
+
+    <script>
+        document.getElementById("submit_button").onclick = function () {
+            var url = document.getElementsByName("url")[0].value;
+            var start = document.getElementsByName("start")[0].value;
+            var end = document.getElementsByName("end")[0].value;
+
+            jQuery.post("/clip", {
+                url: url,
+                start: start,
+                end: end
+            }, function (msg) {
+                runLoop(msg);
+            });
+        };
+    </script>
+
+
+
+
 </body>
+
 </html>

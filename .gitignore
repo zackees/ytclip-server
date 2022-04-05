@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+app/temp/*
+
 # Distribution / packaging
 .Python
 prod_env/

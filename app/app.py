@@ -5,21 +5,36 @@
 
 import datetime
 import os
+import shutil
 import subprocess
 import traceback
 from typing import Tuple
 
-from flask import Flask, Response, request
+from flask import Flask, Response, request, send_from_directory
+from flask_executor import Executor
 
 DEFAULT_PORT = 80
 
 STARTUP_DATETIME = datetime.datetime.now()
 
 HERE = os.path.dirname(__file__)
+TEMP_DIR = os.path.join(HERE, "temp")
+
+STATE_PROCESSING = "processing"
+STATE_FINISHED = "finished"
+STATE_ERROR = "error"
+
+active_tokens = {}
+
+# Generate temp directory to do work in.
+if os.path.exists(TEMP_DIR):
+    shutil.rmtree(TEMP_DIR, ignore_errors=True)
+os.makedirs(TEMP_DIR, exist_ok=True)
 
 # Note, app must be instantiated here because the functions
 # below bind to it.
 app = Flask(__name__)
+executor = Executor(app)
 
 
 def get_file(filename):  # pragma: no cover
@@ -37,10 +52,9 @@ def log_error(msg: str) -> None:
     print(msg)
 
 
-def run_ytclip(url: str, start: str, end: str) -> str:
+def run_ytclip(url: str, start: str, end: str, token: str) -> str:
     """Return the string name of the file that was created."""
     print(f"{url} {start} {end}")
-    outname = "test/out.mp4"
     cmd = [
         "ytclip",
         url,
@@ -49,10 +63,14 @@ def run_ytclip(url: str, start: str, end: str) -> str:
         "--end_timestamp",
         end,
         "--outname",
-        outname,
+        token,
     ]
-    subprocess.check_output(cmd)
-    return outname
+
+    subprocess.call(cmd, cwd=TEMP_DIR)
+    if os.path.exists(os.path.join(TEMP_DIR, f"{token}.mp4")):
+        active_tokens[token] = STATE_FINISHED
+    else:
+        active_tokens[token] = STATE_ERROR
 
 
 @app.route("/", methods=["GET"])
@@ -91,12 +109,43 @@ def api_clip() -> Tuple[str, int, dict]:
         log_error(f"{err}")
         return "invalid request", 400, {"content-type": "text/plain; charset=utf-8"}
     try:
-        finished_file = run_ytclip(url=url, start=start, end=end)
-        return f"{finished_file}", 200, {"content-type": "text/plain; charset=utf-8"}
+        token = os.urandom(16).hex()
+        active_tokens[token] = STATE_PROCESSING
+        # TODO: Break this off into a thread.
+        task = lambda: run_ytclip(url=url, start=start, end=end, token=token)
+        executor.submit(task)
+        return f"{token}", 200, {"content-type": "text/plain; charset=utf-8"}
     except Exception as exc:  # pylint: disable=broad-except
         traceback.print_exc()
         log_error(f"{exc}")
         return "failed", 500, {"content-type": "text/plain; charset=utf-8"}
+
+
+@app.route("/clip/status/<token>", methods=["GET"])
+def api_clip_status(token) -> Tuple[str, int, dict]:
+    """Api endpoint to running the command."""
+    status = active_tokens.get(token, None)
+    if status is None:
+        return "not found", 200, {"content-type": "text/plain; charset=utf-8"}
+    if status == STATE_FINISHED:
+        return "ready for download", 200, {"content-type": "text/plain; charset=utf-8"}
+    if status == STATE_PROCESSING:
+        return "still processing", 200, {"content-type": "text/plain; charset=utf-8"}
+    if status == STATE_ERROR:
+        return "error aborted", 200, {"content-type": "text/plain; charset=utf-8"}
+
+
+@app.route("/clip/download/<token>", methods=["GET"])
+def api_clip_download(token) -> Tuple[str, int, dict]:
+    """Download the clip if it's ready."""
+    status = active_tokens.get(token, None)
+    if status is None:
+        return "not found", 404, {"content-type": "text/plain; charset=utf-8"}
+    if not status:
+        return f"still processing", 200, {"content-type": "text/plain; charset=utf-8"}
+    # Download file to requester
+    name = f"{token}.mp4"
+    return send_from_directory(TEMP_DIR, name, as_attachment=True)
 
 
 def main() -> None:
