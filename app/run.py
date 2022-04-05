@@ -6,9 +6,6 @@
 import os
 import subprocess
 import time
-from datetime import datetime
-
-import flask
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -16,10 +13,16 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 # _TIME_BEFORE_RECHECK = 60 * 60
 _TIME_BEFORE_RECHECK = 10
 
+
 def main() -> None:
     """Main entry point."""
     # Start off by updating to the latest version of the repo.
-    subprocess.call(["git", "pull"], cwd=HERE)
+    stdout = subprocess.check_output(["git", "pull"], cwd=HERE).decode("utf-8")
+    if "Already up to date." in stdout:
+        pass
+    else:
+        print(stdout)
+
     # Setup the environment
     env = {"FLASK_APP": "app/app.py", "FLASK_ENV": "development"}
     env.update(os.environ)
