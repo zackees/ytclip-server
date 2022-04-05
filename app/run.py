@@ -13,10 +13,11 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 # _TIME_BEFORE_RECHECK = 60 * 60
 _TIME_BEFORE_RECHECK = 10
 
+
 def main() -> None:
     """Main entry point."""
     # Start off by updating to the latest version of the repo.
-    subprocess.call(["git", "pull"], cwd=HERE)
+    subprocess.call(["git", "pull"], stderr=subprocess.DEVNULL, cwd=HERE)
     # Setup the environment
     env = {"FLASK_APP": "app/app.py", "FLASK_ENV": "development"}
     env.update(os.environ)
