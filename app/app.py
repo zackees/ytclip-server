@@ -8,7 +8,6 @@ import os
 import shutil
 import subprocess
 import traceback
-from email.mime import base
 from threading import Timer
 from typing import Tuple
 
