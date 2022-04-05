@@ -8,10 +8,11 @@ import os
 import shutil
 import subprocess
 import traceback
+from threading import Timer
 from typing import Tuple
 
 from flask import Flask, Response, request, send_from_directory
-from flask_executor import Executor
+from flask_executor import Executor  # pylint: disable=import-error
 
 DEFAULT_PORT = 80
 MAX_WORKERS = 8
@@ -24,6 +25,33 @@ TEMP_DIR = os.path.join(HERE, "temp")
 STATE_PROCESSING = "processing"
 STATE_FINISHED = "finished"
 STATE_ERROR = "error"
+
+# 4 hours of time before the mp4 is expired.
+GARGABE_EXPIRATION_SECONDS = 60 * 60 * 4
+
+
+def file_age(filepath: str) -> int:
+    """Return the age of a file."""
+    return (
+        datetime.datetime.now() - datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
+    ).total_seconds()
+
+
+def gabage_collect() -> None:
+    """Garbage collect old files."""
+    for filename in os.listdir(TEMP_DIR):
+        if filename.endswith(".mp4"):
+            file_path = os.path.join(TEMP_DIR, filename)
+            if os.path.isfile(file_path):
+                file_age_seconds = file_age(file_path)
+                if file_age_seconds > GARGABE_EXPIRATION_SECONDS:
+                    try:
+                        os.remove(file_path)
+                    except Exception:  # pylint: disable=broad-except
+                        log_error(traceback.format_exc())
+
+
+THREADED_GARBAGE_COLLECTOR = Timer(GARGABE_EXPIRATION_SECONDS / 2, gabage_collect, ("arg1", "arg2"))
 
 active_tokens = {}
 
@@ -112,7 +140,6 @@ def api_clip() -> Tuple[str, int, dict]:
     try:
         token = os.urandom(16).hex()
         active_tokens[token] = STATE_PROCESSING
-        # TODO: Break this off into a thread.
         task = lambda: run_ytclip(url=url, start=start, end=end, token=token)
         executor.submit(task)
         return f"{token}", 200, {"content-type": "text/plain; charset=utf-8"}
@@ -134,6 +161,7 @@ def api_clip_status(token) -> Tuple[str, int, dict]:
         return "still processing", 200, {"content-type": "text/plain; charset=utf-8"}
     if status == STATE_ERROR:
         return "error aborted", 200, {"content-type": "text/plain; charset=utf-8"}
+    return "unknown", 200, {"content-type": "text/plain; charset=utf-8"}
 
 
 @app.route("/clip/download/<token>", methods=["GET"])
@@ -143,7 +171,7 @@ def api_clip_download(token) -> Tuple[str, int, dict]:
     if status is None:
         return "not found", 404, {"content-type": "text/plain; charset=utf-8"}
     if not status:
-        return f"still processing", 200, {"content-type": "text/plain; charset=utf-8"}
+        return "still processing", 200, {"content-type": "text/plain; charset=utf-8"}
     # Download file to requester
     name = f"{token}.mp4"
     return send_from_directory(TEMP_DIR, name, as_attachment=True)
