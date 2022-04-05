@@ -86,7 +86,6 @@
         }
 
         document.getElementById("submit_button").onclick = function () {
-            document.getElementById("spinner").classList.add("spinner");
             var url = document.getElementsByName("url")[0].value;
             var start = document.getElementsByName("start")[0].value;
             var end = document.getElementsByName("end")[0].value;
@@ -97,6 +96,7 @@
                 alert("Invalid URL");
                 return;
             }
+            document.getElementById("spinner").classList.add("spinner");
             jQuery.post("/clip", {
                 url: url,
                 start: start,
