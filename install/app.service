@@ -1,9 +1,10 @@
 [Unit]
 Description=YTClip Webserver
 After=network.target
+StartLimitIntervalSec=5
 
 [Service]
-ExecStart=/root/ytclip-server/run.sh
+ExecStart=/usr/bin/sh -c ls
 Restart=always
 User=nobody
 
