@@ -22,6 +22,18 @@
         border-right: 2px solid transparent;
         animation: spinner .6s linear infinite;
     }
+
+    * {
+        margin: 5px;
+    }
+
+    input {
+        margin-bottom: 20px;
+    }
+
+    #main_content {
+        color: red;
+    }
 </style>
 
 <body>
@@ -29,17 +41,26 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 
     <div>
-        <H1>YTClip</H1>
-        <p>Clip a youtube, bitchute, rumble video source.</p>
+        <H1>Vid Clip Tool</H1>
+        <p>Download a clip from an online video.</p>
+        <div style="margin-bottom: 20px;"></div>
+
         <!-- generate a form to take in url -->
-        <input type="text" name="url" id="input_url" placeholder="Enter URL" size="80"><br>
+        <h3>Enter in a valid url</h3>
+        <h6>(ex: https://www.youtube.com/watch?v=Htiz00ktAM4)</h6>
+        <input type="url" name="url" id="input_url" placeholder="Enter URL" size="80"><br>
+        <h3>Now enter in a start timestamp like 1:00 (one minute)</h3>
         <!-- start_timestamp -->
         <label for="start_timestamp">Start timestamp:</label>
-        <input type="text" name="start" id="start_timestamp" placeholder="0:10" size="8"><br>
+        <input type="text" name="start" id="start_timestamp" size="8"><br>
         <!-- end_timestamp -->
+        <h3>Now enter in an end timestamp like 1:02 (one minute, two seconds)</h3>
         <label for="end_timestamp">End timestamp:</label>
-        <input type="text" name="end" id="end_timestamp" placeholder="0:32" size="8"><br>
-        <input type="submit" value="Submit" id="submit_button">
+        <input type="text" name="end" id="end_timestamp" size="8"><br>
+        <h3>When all fields are correct, this button will become enabled:</h3>
+        <input type="submit" value="Cut and Download" id="submit_button">
+        <p>The time it takes to run this depends on the size of the video! If the video is long then you may want to
+            grab a coffee...</p>
     </div>
 
     <div id="spinner"></div>
@@ -47,6 +68,28 @@
 
 
     <script>
+        // Url to test correctness of url input.
+
+        const domInputUrl = document.getElementById('input_url');
+        const domStartTimestamp = document.getElementById('start_timestamp');
+        const domEndTimestamp = document.getElementById('end_timestamp');
+
+        const domSubmitButton = document.getElementById('submit_button');
+        const domMainContent = document.getElementById('main_content');
+
+        function updateButtons(event) {
+            const url_ok = domInputUrl.value.length > 0;
+            const start_timestamp_ok = domStartTimestamp.value.length > 0;
+            const end_timestamp_ok = domEndTimestamp.value.length > 0;
+            const all_ok = url_ok && start_timestamp_ok && end_timestamp_ok;
+            domSubmitButton.disabled = !all_ok;
+        }
+        updateButtons();
+
+        domInputUrl.addEventListener("keyup", updateButtons);
+        domStartTimestamp.addEventListener("keyup", updateButtons);
+        domEndTimestamp.addEventListener("keyup", updateButtons);
+
         // function to download large binary data
         function download_url_as_binary(url, callback) {
             var xhr = new XMLHttpRequest();
@@ -60,7 +103,11 @@
             xhr.send();
         }
         const dom = document.getElementById("main_content");
+        let start_time = null;
         function runLoop(token) {
+            if (start_time === null) {
+                start_time = new Date().getTime();
+            }
             jQuery.get("/clip/status/" + token, function (msg) {
                 dom.innerText = msg;
                 if (msg == "error aborted") {
@@ -81,6 +128,8 @@
                     });
                     return;
                 }
+                const seconds = Number.parseInt((new Date().getTime() - start_time) / 1000, 10);
+                dom.innerText = `${msg}  ... ${seconds} seconds`;
                 setTimeout(function () { runLoop(token); }, 1000);
             });
         }
@@ -89,13 +138,7 @@
             var url = document.getElementsByName("url")[0].value;
             var start = document.getElementsByName("start")[0].value;
             var end = document.getElementsByName("end")[0].value;
-
             // validate that the url is valid using a regex
-            var regex = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
-            if (!regex.test(url)) {
-                alert("Invalid URL");
-                return;
-            }
             document.getElementById("spinner").classList.add("spinner");
             jQuery.post("/clip", {
                 url: url,
