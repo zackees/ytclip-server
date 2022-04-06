@@ -64,7 +64,9 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 # Note, app must be instantiated here because the functions
 # below bind to it.
 app = Flask(__name__)
-app.config["EXECUTOR_MAX_WORKERS"] = int(os.environ.get("EXECUTOR_MAX_WORKERS", DEFUALT_EXECUTOR_MAX_WORKERS))
+app.config["EXECUTOR_MAX_WORKERS"] = int(
+    os.environ.get("EXECUTOR_MAX_WORKERS", DEFUALT_EXECUTOR_MAX_WORKERS)
+)
 executor = Executor(app)
 THREADED_GARBAGE_COLLECTOR = Timer(GARGABE_EXPIRATION_SECONDS / 2, gabage_collect, ("arg1", "arg2"))
 
@@ -110,6 +112,13 @@ def api_default():  # pragma: no cover
     """Returns the contents of the index.html file."""
     content = get_file("index.html")
     return Response(content, mimetype="text/html")
+
+
+@app.route("/preview.jpg", methods=["GET"])
+def api_preview() -> Tuple[str, int, dict]:
+    """Returns the contents of the preview.jpg file."""
+    content = get_file("preview.jpg")
+    return Response(content, mimetype="image/jpeg")
 
 
 @app.route("/info")
