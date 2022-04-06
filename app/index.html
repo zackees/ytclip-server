@@ -129,11 +129,11 @@
                     in_use = false;
                     updateButtons();
                     download_url_as_binary("/clip/download/" + token, function (data) {
-                        var blob = new Blob([data], {
+                        const blob = new Blob([data], {
                             type: "video/mp4"
                         });
-                        var url = URL.createObjectURL(blob);
-                        var a = document.createElement("a");
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
                         a.href = url;
                         a.download = "clip.mp4";
                         a.click();
@@ -147,9 +147,9 @@
         }
 
         document.getElementById("submit_button").onclick = function () {
-            var url = document.getElementsByName("url")[0].value.trim();
-            var start = document.getElementsByName("start")[0].value.trim();
-            var end = document.getElementsByName("end")[0].value.trim();
+            const url = document.getElementsByName("url")[0].value.trim();
+            const start = document.getElementsByName("start")[0].value.trim();
+            const end = document.getElementsByName("end")[0].value.trim();
             // validate that the url is valid using a regex
             document.getElementById("spinner").classList.add("spinner");
             setTimeout(() => domPleaseDonate.style.display = "block", 500);
