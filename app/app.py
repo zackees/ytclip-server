@@ -8,7 +8,7 @@ import os
 import shutil
 import subprocess
 import traceback
-from threading import Timer
+from threading import Lock, Timer
 from typing import Tuple
 
 from flask import Flask, Response, request, send_from_directory
@@ -29,6 +29,14 @@ STATE_ERROR = "error"
 # 4 hours of time before the mp4 is expired.
 GARGABE_EXPIRATION_SECONDS = 60 * 60 * 4
 
+active_tokens = {}
+active_tokens_mutex = Lock()
+
+# Generate temp directory to do work in.
+if os.path.exists(TEMP_DIR):
+    shutil.rmtree(TEMP_DIR, ignore_errors=True)
+os.makedirs(TEMP_DIR, exist_ok=True)
+
 
 def file_age(filepath: str) -> int:
     """Return the age of a file."""
@@ -46,20 +54,15 @@ def gabage_collect() -> None:
                 file_age_seconds = file_age(file_path)
                 if file_age_seconds > GARGABE_EXPIRATION_SECONDS:
                     try:
+                        with active_tokens_mutex:
+                            if token in active_tokens:
+                                del active_tokens[token]
                         basename = os.path.basename(file_path)
                         token = os.path.splitext(basename)[0]
                         os.remove(file_path)
-                        del active_tokens[token]
                     except Exception:  # pylint: disable=broad-except
                         log_error(traceback.format_exc())
 
-
-active_tokens = {}
-
-# Generate temp directory to do work in.
-if os.path.exists(TEMP_DIR):
-    shutil.rmtree(TEMP_DIR, ignore_errors=True)
-os.makedirs(TEMP_DIR, exist_ok=True)
 
 # Note, app must be instantiated here because the functions
 # below bind to it.
@@ -102,9 +105,11 @@ def run_ytclip(url: str, start: str, end: str, token: str) -> str:
 
     subprocess.call(cmd, cwd=TEMP_DIR)
     if os.path.exists(os.path.join(TEMP_DIR, f"{token}.mp4")):
-        active_tokens[token] = STATE_FINISHED
+        with active_tokens_mutex:
+            active_tokens[token] = STATE_FINISHED
     else:
-        active_tokens[token] = STATE_ERROR
+        with active_tokens_mutex:
+            active_tokens[token] = STATE_ERROR
 
 
 @app.route("/", methods=["GET"])
@@ -151,7 +156,8 @@ def api_clip() -> Tuple[str, int, dict]:
         return "invalid request", 400, {"content-type": "text/plain; charset=utf-8"}
     try:
         token = os.urandom(16).hex()
-        active_tokens[token] = STATE_PROCESSING
+        with active_tokens_mutex:
+            active_tokens[token] = STATE_PROCESSING
         task = lambda: run_ytclip(url=url, start=start, end=end, token=token)
         executor.submit(task)
         return f"{token}", 200, {"content-type": "text/plain; charset=utf-8"}
@@ -164,7 +170,8 @@ def api_clip() -> Tuple[str, int, dict]:
 @app.route("/clip/status/<token>", methods=["GET"])
 def api_clip_status(token) -> Tuple[str, int, dict]:
     """Api endpoint to running the command."""
-    status = active_tokens.get(token, None)
+    with active_tokens_mutex:
+        status = active_tokens.get(token, None)
     if status is None:
         return "not found", 200, {"content-type": "text/plain; charset=utf-8"}
     if status == STATE_FINISHED:
@@ -179,7 +186,8 @@ def api_clip_status(token) -> Tuple[str, int, dict]:
 @app.route("/clip/download/<token>", methods=["GET"])
 def api_clip_download(token) -> Tuple[str, int, dict]:
     """Download the clip if it's ready."""
-    status = active_tokens.get(token, None)
+    with active_tokens_mutex:
+        status = active_tokens.get(token, None)
     if status is None:
         return "not found", 404, {"content-type": "text/plain; charset=utf-8"}
     if not status:
