@@ -15,7 +15,7 @@ from flask import Flask, Response, request, send_from_directory
 from flask_executor import Executor  # pylint: disable=import-error
 
 DEFAULT_PORT = 80
-MAX_WORKERS = 8
+DEFUALT_EXECUTOR_MAX_WORKERS = 32
 
 STARTUP_DATETIME = datetime.datetime.now()
 
@@ -64,7 +64,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 # Note, app must be instantiated here because the functions
 # below bind to it.
 app = Flask(__name__)
-app.config["EXECUTOR_MAX_WORKERS"] = MAX_WORKERS
+app.config["EXECUTOR_MAX_WORKERS"] = int(os.environ.get("EXECUTOR_MAX_WORKERS", DEFUALT_EXECUTOR_MAX_WORKERS))
 executor = Executor(app)
 THREADED_GARBAGE_COLLECTOR = Timer(GARGABE_EXPIRATION_SECONDS / 2, gabage_collect, ("arg1", "arg2"))
 
