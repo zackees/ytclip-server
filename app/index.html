@@ -79,8 +79,6 @@
             for free speech.</p>
     </div>
     <script>
-        // Url to test correctness of url input.
-
         const domInputUrl = document.getElementById('input_url');
         const domStartTimestamp = document.getElementById('start_timestamp');
         const domEndTimestamp = document.getElementById('end_timestamp');
@@ -90,6 +88,13 @@
         const domPleaseDonate = document.getElementById('please_donate');
 
         let in_use = false;
+
+        const args = new URLSearchParams(window.location.search);
+        const url = args.get("url");
+        console.log(url);
+        if (url !== null) {
+            domInputUrl.value = url;
+        }
 
         function updateButtons(event) {
             const regex_timestamp = /^([\d]\:)?([\d]\:)?[\d]+$/;
