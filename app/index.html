@@ -178,6 +178,7 @@
             document.getElementById("spinner").classList.add("spinner");
             setTimeout(() => domPleaseDonate.style.display = "block", 500);
             in_use = true;
+            start_time = null;
             updateButtons();
             jQuery.post("/clip", {
                 url: url,
