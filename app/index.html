@@ -81,6 +81,8 @@
         const domMainContent = document.getElementById('main_content');
         const domPleaseDonate = document.getElementById('please_donate');
 
+        let in_use = false;
+
         function updateButtons(event) {
             const regex_timestamp = /^([\d]\:)?([\d]\:)?[\d]+$/;
             const url_regex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/;
@@ -88,7 +90,7 @@
             const start_timestamp_ok = domStartTimestamp.value.trim().length > 0 && regex_timestamp.test(domStartTimestamp.value.trim());
             const end_timestamp_ok = domEndTimestamp.value.trim().length > 0 && regex_timestamp.test(domEndTimestamp.value.trim());
             const all_ok = url_ok && start_timestamp_ok && end_timestamp_ok;
-            domSubmitButton.disabled = !all_ok;
+            domSubmitButton.disabled = !all_ok || in_use;
         }
         updateButtons();
 
@@ -118,10 +120,14 @@
                 dom.innerText = msg;
                 if (msg == "error aborted") {
                     document.getElementById("spinner").classList.remove("spinner");
+                    in_use = false;
+                    updateButtons();
                     return;
                 }
                 if (msg == "ready for download") {
                     document.getElementById("spinner").classList.remove("spinner");
+                    in_use = false;
+                    updateButtons();
                     download_url_as_binary("/clip/download/" + token, function (data) {
                         var blob = new Blob([data], {
                             type: "video/mp4"
@@ -147,6 +153,8 @@
             // validate that the url is valid using a regex
             document.getElementById("spinner").classList.add("spinner");
             setTimeout(() => domPleaseDonate.style.display = "block", 500);
+            in_use = true;
+            updateButtons();
             jQuery.post("/clip", {
                 url: url,
                 start: start,
