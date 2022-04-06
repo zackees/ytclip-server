@@ -9,13 +9,13 @@ import shutil
 import subprocess
 import traceback
 from threading import Lock, Timer
-from typing import Tuple
+from typing import Dict, Tuple
 
 from flask import Flask, Response, request, send_from_directory
-from flask_executor import Executor  # pylint: disable=import-error
+from flask_executor import Executor  # type: ignore
 
 DEFAULT_PORT = 80
-DEFUALT_EXECUTOR_MAX_WORKERS = 32
+DEFAULT_EXECUTOR_MAX_WORKERS = 32
 
 STARTUP_DATETIME = datetime.datetime.now()
 
@@ -29,7 +29,7 @@ STATE_ERROR = "error"
 # 4 hours of time before the mp4 is expired.
 GARGABE_EXPIRATION_SECONDS = 60 * 60 * 4
 
-active_tokens = {}
+active_tokens: Dict[str, str] = {}
 active_tokens_mutex = Lock()
 
 # Generate temp directory to do work in.
@@ -38,7 +38,7 @@ if os.path.exists(TEMP_DIR):
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 
-def file_age(filepath: str) -> int:
+def file_age(filepath: str) -> float:
     """Return the age of a file."""
     return (
         datetime.datetime.now() - datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
@@ -54,11 +54,11 @@ def gabage_collect() -> None:
                 file_age_seconds = file_age(file_path)
                 if file_age_seconds > GARGABE_EXPIRATION_SECONDS:
                     try:
+                        basename = os.path.basename(file_path)
+                        token = os.path.splitext(basename)[0]
                         with active_tokens_mutex:
                             if token in active_tokens:
                                 del active_tokens[token]
-                        basename = os.path.basename(file_path)
-                        token = os.path.splitext(basename)[0]
                         os.remove(file_path)
                     except Exception:  # pylint: disable=broad-except
                         log_error(traceback.format_exc())
@@ -68,10 +68,10 @@ def gabage_collect() -> None:
 # below bind to it.
 app = Flask(__name__)
 app.config["EXECUTOR_MAX_WORKERS"] = int(
-    os.environ.get("EXECUTOR_MAX_WORKERS", DEFUALT_EXECUTOR_MAX_WORKERS)
+    os.environ.get("EXECUTOR_MAX_WORKERS", DEFAULT_EXECUTOR_MAX_WORKERS)
 )
 executor = Executor(app)
-THREADED_GARBAGE_COLLECTOR = Timer(GARGABE_EXPIRATION_SECONDS / 2, gabage_collect, ("arg1", "arg2"))
+garbage_collection_thread = Timer(GARGABE_EXPIRATION_SECONDS / 2, gabage_collect)
 
 
 def get_file(filename):  # pragma: no cover
@@ -89,7 +89,7 @@ def log_error(msg: str) -> None:
     print(msg)
 
 
-def run_ytclip(url: str, start: str, end: str, token: str) -> str:
+def run_ytclip(url: str, start: str, end: str, token: str) -> None:
     """Return the string name of the file that was created."""
     print(f"{url} {start} {end}")
     cmd = [
@@ -113,14 +113,14 @@ def run_ytclip(url: str, start: str, end: str, token: str) -> str:
 
 
 @app.route("/", methods=["GET"])
-def api_default():  # pragma: no cover
+def api_default() -> Response:
     """Returns the contents of the index.html file."""
     content = get_file("index.html")
     return Response(content, mimetype="text/html")
 
 
 @app.route("/preview.jpg", methods=["GET"])
-def api_preview() -> Tuple[str, int, dict]:
+def api_preview() -> Response:
     """Returns the contents of the preview.jpg file."""
     content = get_file("preview.jpg")
     return Response(content, mimetype="image/jpeg")
@@ -184,14 +184,14 @@ def api_clip_status(token) -> Tuple[str, int, dict]:
 
 
 @app.route("/clip/download/<token>", methods=["GET"])
-def api_clip_download(token) -> Tuple[str, int, dict]:
+def api_clip_download(token) -> Response:
     """Download the clip if it's ready."""
     with active_tokens_mutex:
         status = active_tokens.get(token, None)
     if status is None:
-        return "not found", 404, {"content-type": "text/plain; charset=utf-8"}
+        return Response("not found", status=404, mimetype="text/plain; charset=utf-8")
     if not status:
-        return "still processing", 200, {"content-type": "text/plain; charset=utf-8"}
+        return Response("still processing", status=200, mimetype="text/plain; charset=utf-8")
     # Download file to requester
     name = f"{token}.mp4"
     return send_from_directory(TEMP_DIR, name, as_attachment=True)
