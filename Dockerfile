@@ -15,12 +15,12 @@ COPY ./requirements.txt /requirements.txt
 RUN pip3 install -r requirements.txt
 
 # Copy Application files.
-COPY ./app .
+COPY ./ytclip_server .
 
 # Expose the port and then launch the app.
 EXPOSE 80
 
-ENV FLASK_APP=ytclip-server/app.py
+ENV FLASK_APP=ytclip_server/app.py
 ENV FLASK_ENV=production
 
 CMD ["python3", "-m", "flask", "run", "--host=0.0.0.0", "--port=80"]

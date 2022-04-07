@@ -7,7 +7,7 @@ Docker http server running [ytclip](https://github.com/zackees/ytclip)
   * `git clone https://github.com/zackees/ytclip-server`
   * `cd ytclip-server`
   * `docker-compose up`
-  * Now open up `http://0.0.0.0:1234` in a browser.
+  * Now open up `http://127.0.0.1:5128/`
 
 # Demo
 
