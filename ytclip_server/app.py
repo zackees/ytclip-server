@@ -142,6 +142,7 @@ def api_info() -> Tuple[str, int, dict]:
     headers = {"content-type": "text/plain; charset=utf-8"}
     msg = "running\n"
     msg += "Example: localhost/clip\n"
+    msg += "VERSION: " + VERSION + "\n"
     msg += f"Launched at         {STARTUP_DATETIME}"
     msg += f"\nCurrent utc time:   {datetime.datetime.utcnow()}"
     msg += f"\nCurrent local time: {now_time}"
