@@ -156,7 +156,7 @@
     }
 
     function updateButtons(event) {
-        const regex_timestamp = /^([\d]\:)?([\d]\:)?[\d]+$/;
+        const regex_timestamp = /^[\d:.]+$/;
         const url_regex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/;
         const url_ok = domInputUrl.value.trim().length > 0 && url_regex.test(domInputUrl.value.trim());
         const start_timestamp_ok = domStartTimestamp.value.trim().length > 0 && regex_timestamp.test(domStartTimestamp.value.trim());
