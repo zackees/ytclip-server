@@ -94,7 +94,6 @@ setup(
     install_requires=REQUIREMENTS,
     entry_points={
         "console_scripts": [
-            # # "ytclip = ytclip.ytclip:run_cmd",
             "ytclip-server = ytclip_server.app:main",
         ],
     },
