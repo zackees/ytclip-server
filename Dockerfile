@@ -19,7 +19,7 @@ COPY ./*.py /
 # Copy Application files.
 COPY ./ytclip_server ./ytclip_server
 
-RUN python -m pip install .
+RUN python -m pip install -e .
 
 # Expose the port and then launch the app.
 EXPOSE 80
