@@ -8,6 +8,7 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import time
 import traceback
 from threading import Lock, Timer
@@ -16,7 +17,10 @@ from typing import Dict, Tuple
 from flask import Flask, Response, request, send_from_directory
 from flask_executor import Executor  # type: ignore
 
-from ytclip_server.version import VERSION
+# TODO: Why is this necessary?!?!
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, "ytclip_server"))
+from version import VERSION
 
 ALLOW_SHUTDOWN = False
 DEFAULT_PORT = 80
