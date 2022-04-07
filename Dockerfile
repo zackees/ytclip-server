@@ -10,12 +10,16 @@ RUN apt-get update
 RUN apt-get install -y python-is-python3 python3-pip
 
 # Add requirements file and install.
-COPY ./requirements.txt /requirements.txt
-# Install requirements
-RUN pip3 install -r requirements.txt
+COPY ./*.txt /
+COPY ./*.md /
+COPY ./*.in /
+COPY ./*.sh /
+COPY ./*.py /
 
 # Copy Application files.
-COPY ./ytclip_server .
+COPY ./ytclip_server ./ytclip_server
+
+RUN python -m pip install .
 
 # Expose the port and then launch the app.
 EXPOSE 80

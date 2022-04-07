@@ -16,7 +16,7 @@ from typing import Dict, Tuple
 from flask import Flask, Response, request, send_from_directory
 from flask_executor import Executor  # type: ignore
 
-from .version import VERSION
+from ytclip_server.version import VERSION
 
 ALLOW_SHUTDOWN = False
 DEFAULT_PORT = 80
