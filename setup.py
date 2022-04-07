@@ -84,12 +84,12 @@ setup(
         "Environment :: Console",
     ],
     install_requires=REQUIREMENTS,
-    # entry_points={
-    #    "console_scripts": [
-    # # "ytclip = ytclip.ytclip:run_cmd",
-    #        "ytclip-server = ytclip_server.app:main",
-    #    ],
-    # },
+    entry_points={
+        "console_scripts": [
+            # # "ytclip = ytclip.ytclip:run_cmd",
+            "ytclip-server = ytclip_server.app:main",
+        ],
+    },
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
     package_data={},
     include_package_data=True,

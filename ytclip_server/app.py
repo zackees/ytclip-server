@@ -2,11 +2,13 @@
     Flask app for the ytclip command line tool. Serves an index.html at port 80. Clipping
     api is located at /clip
 """
-
+import argparse
 import datetime
 import os
 import shutil
+import signal
 import subprocess
+import time
 import traceback
 from threading import Lock, Timer
 from typing import Dict, Tuple
@@ -14,6 +16,7 @@ from typing import Dict, Tuple
 from flask import Flask, Response, request, send_from_directory
 from flask_executor import Executor  # type: ignore
 
+ALLOW_SHUTDOWN = False
 DEFAULT_PORT = 80
 DEFAULT_EXECUTOR_MAX_WORKERS = 32
 
@@ -197,9 +200,33 @@ def api_clip_download(token) -> Response:
     return send_from_directory(TEMP_DIR, name, as_attachment=True)
 
 
+@app.route("/shutdown", methods=["GET"])
+def api_clip_shutdown() -> Response:
+    """Api endpoint for terminating the process."""
+
+    def kill_process():
+        """Kill the process."""
+        time.sleep(1)
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    if not ALLOW_SHUTDOWN:
+        return Response("shutdown not allowed", status=403, mimetype="text/plain; charset=utf-8")
+    func = request.environ.get("werkzeug.server.shutdown")
+    if func is None:
+        func = kill_process
+    executor.submit(func)
+    return Response("shutdown", status=200, mimetype="text/plain; charset=utf-8")
+
+
 def main() -> None:
     """Run the flask app."""
-    port = int(os.environ.get("FLASK_PORT", DEFAULT_PORT))
+    global ALLOW_SHUTDOWN  # pylint: disable=global-statement
+    parser = argparse.ArgumentParser(description="ytclip-server")
+    parser.add_argument("--port", type=int, default=None, help="port to listen on")
+    args = parser.parse_args()
+    port = args.port or int(os.environ.get("FLASK_PORT", DEFAULT_PORT))
+    ALLOW_SHUTDOWN = bool(int(os.environ.get("ALLOW_SHUTDOWN", "0")))
+    # Gracefully shutdown the flask app on SIGINT
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
 
 
