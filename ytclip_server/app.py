@@ -234,7 +234,7 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=None, help="port to listen on")
     args = parser.parse_args()
     port = args.port or int(os.environ.get("FLASK_PORT", DEFAULT_PORT))
-    ALLOW_SHUTDOWN = bool(int(os.environ.get("ALLOW_SHUTDOWN", "0")))
+    ALLOW_SHUTDOWN = bool(int(os.environ.get("YTCLIP_SERVER_ALLOW_SHUTDOWN", "0")))
     # Gracefully shutdown the flask app on SIGINT
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
 

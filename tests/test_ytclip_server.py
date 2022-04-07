@@ -16,7 +16,7 @@ class YtclipServerTester(unittest.TestCase):
     # @unittest.skip("Skip for now")
     def test_platform_executable(self) -> None:
         """Opens up the ytclip-server and test that its running after one second."""
-        env = {"ALLOW_SHUTDOWN": "1"}
+        env = {"YTCLIP_SERVER_ALLOW_SHUTDOWN": "1"}
         env.update(os.environ)
         proc = subprocess.Popen(f"ytclip-server --port {PORT}", shell=True, env=env)
         try:
