@@ -128,111 +128,115 @@
             cause
             for free speech.</p>
     </div>
-
-    <!-- import jquery -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script>
-        const domInputUrl = document.getElementById('input_url');
-        const domStartTimestamp = document.getElementById('start_timestamp');
-        const domEndTimestamp = document.getElementById('end_timestamp');
-
-        const domSubmitButton = document.getElementById('submit_button');
-        const domMainContent = document.getElementById('main_content');
-        const domPleaseDonate = document.getElementById('please_donate');
-
-        let in_use = false;
-
-        const args = new URLSearchParams(window.location.search);
-        const url = args.get("url");
-        console.log(url);
-        if (url !== null) {
-            domInputUrl.value = url;
-        }
-
-        function updateButtons(event) {
-            const regex_timestamp = /^([\d]\:)?([\d]\:)?[\d]+$/;
-            const url_regex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/;
-            const url_ok = domInputUrl.value.trim().length > 0 && url_regex.test(domInputUrl.value.trim());
-            const start_timestamp_ok = domStartTimestamp.value.trim().length > 0 && regex_timestamp.test(domStartTimestamp.value.trim());
-            const end_timestamp_ok = domEndTimestamp.value.trim().length > 0 && regex_timestamp.test(domEndTimestamp.value.trim());
-            const all_ok = url_ok && start_timestamp_ok && end_timestamp_ok;
-            domSubmitButton.disabled = !all_ok || in_use;
-        }
-        updateButtons();
-
-        domInputUrl.addEventListener("keyup", updateButtons);
-        domStartTimestamp.addEventListener("keyup", updateButtons);
-        domEndTimestamp.addEventListener("keyup", updateButtons);
-
-        // function to download large binary data
-        function download_url_as_binary(url, callback) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function (e) {
-                if (this.status == 200) {
-                    callback(this.response);
-                }
-            };
-            xhr.send();
-        }
-        const dom = document.getElementById("main_content");
-        let start_time = null;
-        function runLoop(token) {
-            if (start_time === null) {
-                start_time = new Date().getTime();
-            }
-            jQuery.get("/clip/status/" + token, function (msg) {
-                dom.innerText = msg;
-                if (msg == "error aborted") {
-                    document.getElementById("spinner").classList.remove("spinner");
-                    in_use = false;
-                    updateButtons();
-                    return;
-                }
-                if (msg == "ready for download") {
-                    document.getElementById("spinner").classList.remove("spinner");
-                    in_use = false;
-                    updateButtons();
-                    download_url_as_binary("/clip/download/" + token, function (data) {
-                        const blob = new Blob([data], {
-                            type: "video/mp4"
-                        });
-                        const clip_name = document.getElementById("outputname").value;
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = clip_name;
-                        a.click();
-                    });
-                    return;
-                }
-                const seconds = Number.parseInt((new Date().getTime() - start_time) / 1000, 10);
-                dom.innerText = `${msg}  ... ${seconds} seconds`;
-                setTimeout(function () { runLoop(token); }, 1000);
-            });
-        }
-
-        document.getElementById("submit_button").onclick = function () {
-            const url = document.getElementsByName("url")[0].value.trim();
-            const start = document.getElementsByName("start")[0].value.trim();
-            const end = document.getElementsByName("end")[0].value.trim();
-            // validate that the url is valid using a regex
-            document.getElementById("spinner").classList.add("spinner");
-            setTimeout(() => domPleaseDonate.style.display = "block", 500);
-            in_use = true;
-            start_time = null;
-            updateButtons();
-            jQuery.post("/clip", {
-                url: url,
-                start: start,
-                end: end
-            }, function (msg) {
-                runLoop(msg);
-            });
-        };
-    </script>
-
 </body>
+
+
+<!-- import jquery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    const domInputUrl = document.getElementById('input_url');
+    const domStartTimestamp = document.getElementById('start_timestamp');
+    const domEndTimestamp = document.getElementById('end_timestamp');
+
+    const domSubmitButton = document.getElementById('submit_button');
+    const domMainContent = document.getElementById('main_content');
+    const domPleaseDonate = document.getElementById('please_donate');
+    const domOutputname = document.getElementById('outputname');
+
+    let in_use = false;
+
+    const args = new URLSearchParams(window.location.search);
+    const url = args.get("url");
+    const outputname = args.get("outputname");
+    if (url !== null) {
+        domInputUrl.value = url;
+    }
+    if (outputname !== null) {
+        domOutputname.value = outputname;
+    }
+
+    function updateButtons(event) {
+        const regex_timestamp = /^([\d]\:)?([\d]\:)?[\d]+$/;
+        const url_regex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/;
+        const url_ok = domInputUrl.value.trim().length > 0 && url_regex.test(domInputUrl.value.trim());
+        const start_timestamp_ok = domStartTimestamp.value.trim().length > 0 && regex_timestamp.test(domStartTimestamp.value.trim());
+        const end_timestamp_ok = domEndTimestamp.value.trim().length > 0 && regex_timestamp.test(domEndTimestamp.value.trim());
+        const all_ok = url_ok && start_timestamp_ok && end_timestamp_ok;
+        domSubmitButton.disabled = !all_ok || in_use;
+    }
+    updateButtons();
+
+    domInputUrl.addEventListener("keyup", updateButtons);
+    domStartTimestamp.addEventListener("keyup", updateButtons);
+    domEndTimestamp.addEventListener("keyup", updateButtons);
+
+    // function to download large binary data
+    function download_url_as_binary(url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function (e) {
+            if (this.status == 200) {
+                callback(this.response);
+            }
+        };
+        xhr.send();
+    }
+    const dom = document.getElementById("main_content");
+    let start_time = null;
+    function runLoop(token) {
+        if (start_time === null) {
+            start_time = new Date().getTime();
+        }
+        jQuery.get("/clip/status/" + token, function (msg) {
+            dom.innerText = msg;
+            if (msg == "error aborted") {
+                document.getElementById("spinner").classList.remove("spinner");
+                in_use = false;
+                updateButtons();
+                return;
+            }
+            if (msg == "ready for download") {
+                document.getElementById("spinner").classList.remove("spinner");
+                in_use = false;
+                updateButtons();
+                download_url_as_binary("/clip/download/" + token, function (data) {
+                    const blob = new Blob([data], {
+                        type: "video/mp4"
+                    });
+                    const clip_name = document.getElementById("outputname").value;
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = clip_name;
+                    a.click();
+                });
+                return;
+            }
+            const seconds = Number.parseInt((new Date().getTime() - start_time) / 1000, 10);
+            dom.innerText = `${msg}  ... ${seconds} seconds`;
+            setTimeout(function () { runLoop(token); }, 1000);
+        });
+    }
+
+    document.getElementById("submit_button").onclick = function () {
+        const url = document.getElementsByName("url")[0].value.trim();
+        const start = document.getElementsByName("start")[0].value.trim();
+        const end = document.getElementsByName("end")[0].value.trim();
+        // validate that the url is valid using a regex
+        document.getElementById("spinner").classList.add("spinner");
+        setTimeout(() => domPleaseDonate.style.display = "block", 500);
+        in_use = true;
+        start_time = null;
+        updateButtons();
+        jQuery.post("/clip", {
+            url: url,
+            start: start,
+            end: end
+        }, function (msg) {
+            runLoop(msg);
+        });
+    };
+</script>
 
 </html>
