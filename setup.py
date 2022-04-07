@@ -17,7 +17,7 @@ URL = "https://github.com/zackees/ytclip-server"
 EMAIL = "dont@email.me"
 AUTHOR = "Zach Vorhies"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "1.0.0"
+VERSION = None
 
 # The text of the README file
 with open(os.path.join(HERE, "README.md"), encoding="utf-8", mode="rt") as fd:
@@ -25,6 +25,14 @@ with open(os.path.join(HERE, "README.md"), encoding="utf-8", mode="rt") as fd:
 
 with open(os.path.join(HERE, "requirements.txt"), encoding="utf-8", mode="rt") as fd:
     REQUIREMENTS = [line.strip() for line in fd.readlines() if line.strip()]
+
+with open(os.path.join(HERE, "ytclip_server", "version.py"), encoding="utf-8", mode="rt") as fd:
+    for line in fd.readlines():
+        if line.startswith("VERSION"):
+            VERSION = line.split("=")[1].strip().strip('"')
+            break
+
+assert VERSION
 
 
 class UploadCommand(Command):

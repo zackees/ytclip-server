@@ -16,6 +16,8 @@ from typing import Dict, Tuple
 from flask import Flask, Response, request, send_from_directory
 from flask_executor import Executor  # type: ignore
 
+from .version import VERSION
+
 ALLOW_SHUTDOWN = False
 DEFAULT_PORT = 80
 DEFAULT_EXECUTOR_MAX_WORKERS = 32
@@ -198,6 +200,12 @@ def api_clip_download(token) -> Response:
     # Download file to requester
     name = f"{token}.mp4"
     return send_from_directory(TEMP_DIR, name, as_attachment=True)
+
+
+@app.route("/version", methods=["GET"])
+def api_version() -> Response:
+    """Api endpoint for getting the version."""
+    return Response(f"{VERSION}", status=200, mimetype="text/plain; charset=utf-8")
 
 
 @app.route("/shutdown", methods=["GET"])

@@ -4,6 +4,7 @@ import time
 import unittest
 
 import requests
+from ytclip_server.version import VERSION
 
 MY_IP = "127.0.0.1"
 PORT = 4421
@@ -21,6 +22,7 @@ class YtclipServerTester(unittest.TestCase):
         try:
             time.sleep(2)
             self.assertIsNone(proc.poll())
+            self.assertEqual(VERSION, requests.get(f"http://{MY_IP}:{PORT}/version").text)
             requests.get(f"http://{MY_IP}:{PORT}/shutdown")
             proc.wait(timeout=10)
         finally:
