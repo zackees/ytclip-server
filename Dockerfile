@@ -24,7 +24,8 @@ RUN python -m pip install -e .
 # Expose the port and then launch the app.
 EXPOSE 80
 
-ENV FLASK_APP=ytclip_server/app.py
-ENV FLASK_ENV=production
+#ENV FLASK_APP=ytclip_server/app.py
+#ENV FLASK_ENV=production
+#CMD ["python3", "-m", "flask", "run", "--host=0.0.0.0", "--port=80"]
 
-CMD ["python3", "-m", "flask", "run", "--host=0.0.0.0", "--port=80"]
+CMD ["/bin/bash", "./run.sh"]
