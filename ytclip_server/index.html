@@ -118,15 +118,16 @@
         <p>The time it takes to run this depends on the size of the original video! If the video is long then you may
             want to
             grab a coffee...</p>
+        <div id="spinner"></div>
+        <div id="main_content"></div>
+        <div id="please_donate" style="display: none">
+            <p>If you like this tool, then consider <a href="https://givesendgo.com/blastvideo">donating</a> to help my
+                cause
+                for free speech.</p>
+        </div>
     </div>
 
-    <div id="spinner"></div>
-    <div id="main_content"></div>
-    <div id="please_donate" style="display: none">
-        <p>If you like this tool, then consider <a href="https://givesendgo.com/blastvideo">donating</a> to help my
-            cause
-            for free speech.</p>
-    </div>
+
 </body>
 
 
@@ -181,14 +182,14 @@
         };
         xhr.send();
     }
-    const dom = document.getElementById("main_content");
+    const dom_main_content = document.getElementById("main_content");
     let start_time = null;
     function runLoop(token) {
         if (start_time === null) {
             start_time = new Date().getTime();
         }
         jQuery.get("/clip/status/" + token, function (msg) {
-            dom.innerText = msg;
+            dom_main_content.innerText = msg;
             if (msg == "error aborted") {
                 document.getElementById("spinner").classList.remove("spinner");
                 in_use = false;
@@ -213,27 +214,38 @@
                 return;
             }
             const seconds = Number.parseInt((new Date().getTime() - start_time) / 1000, 10);
-            dom.innerText = `${msg}  ... ${seconds} seconds`;
+            dom_main_content.innerText = `${msg}  ... ${seconds} seconds`;
             setTimeout(function () { runLoop(token); }, 1000);
+        }).fail(function () {
+            dom_main_content.innerText = "Backend process failed. Please try again.";
+            document.getElementById("spinner").classList.remove("spinner");
+            in_use = false;
+            updateButtons();
         });
     }
 
-    document.getElementById("submit_button").onclick = function () {
+    domSubmitButton.onclick = function () {
         const url = document.getElementsByName("url")[0].value.trim();
         const start = document.getElementsByName("start")[0].value.trim();
         const end = document.getElementsByName("end")[0].value.trim();
         // validate that the url is valid using a regex
         document.getElementById("spinner").classList.add("spinner");
         setTimeout(() => domPleaseDonate.style.display = "block", 500);
-        in_use = true;
         start_time = null;
-        updateButtons();
-        jQuery.post("/clip", {
+        const options = {
             url: url,
             start: start,
             end: end
-        }, function (msg) {
-            runLoop(msg);
+        }
+        jQuery.get("/clip", options, function (token) {
+            in_use = true;
+            updateButtons();
+            runLoop(token);
+        }).fail(function () {
+            document.getElementById("spinner").classList.remove("spinner");
+            in_use = false;
+            dom_main_content.innerText = "Error while trying to start the backend process.";
+            updateButtons();
         });
     };
 </script>

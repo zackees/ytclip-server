@@ -2,28 +2,28 @@
     Flask app for the ytclip command line tool. Serves an index.html at port 80. Clipping
     api is located at /clip
 """
-import argparse
 import datetime
 import os
 import shutil
-import signal
 import subprocess
 import threading
 import time
 import traceback
-from threading import Lock, Timer
-from typing import Dict, Tuple
 
-from flask import Flask, Response, request, send_from_directory
-from flask_executor import Executor  # type: ignore
+# import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock, Timer
+from typing import Dict
+
+from fastapi import FastAPI
+from fastapi.responses import FileResponse, PlainTextResponse, Response
 
 from ytclip_server.version import VERSION
 
-ALLOW_SHUTDOWN = False
+executor = ThreadPoolExecutor(max_workers=8)
+
 DEFAULT_PORT = 80
 DEFAULT_EXECUTOR_MAX_WORKERS = 32
-
-STARTUP_DATETIME = datetime.datetime.now()
 
 HERE = os.path.dirname(__file__)
 TEMP_DIR = os.path.join(HERE, "temp")
@@ -32,11 +32,16 @@ STATE_PROCESSING = "processing"
 STATE_FINISHED = "finished"
 STATE_ERROR = "error"
 
+
+app = FastAPI()
+
 # 4 hours of time before the mp4 is expired.
 GARGABE_EXPIRATION_SECONDS = 60 * 60 * 4
 
 active_tokens: Dict[str, str] = {}
 active_tokens_mutex = Lock()
+STARTUP_DATETIME = datetime.datetime.now()
+
 
 # Generate temp directory to do work in.
 if os.path.exists(TEMP_DIR):
@@ -70,14 +75,8 @@ def gabage_collect() -> None:
                         log_error(traceback.format_exc())
 
 
-# Note, app must be instantiated here because the functions
-# below bind to it.
-app = Flask(__name__)
-app.config["EXECUTOR_MAX_WORKERS"] = int(
-    os.environ.get("EXECUTOR_MAX_WORKERS", DEFAULT_EXECUTOR_MAX_WORKERS)
-)
-executor = Executor(app)
 garbage_collection_thread = Timer(GARGABE_EXPIRATION_SECONDS / 2, gabage_collect)
+garbage_collection_thread.start()
 
 
 def get_file(filename):  # pragma: no cover
@@ -109,7 +108,9 @@ def run_ytclip(url: str, start: str, end: str, token: str) -> None:
         token,
     ]
 
-    subprocess.call(cmd, cwd=TEMP_DIR)
+    proc = subprocess.Popen(cmd, cwd=TEMP_DIR)  # pylint: disable=consider-using-with
+    while proc.poll() is None:
+        time.sleep(0.1)  # be very nice to other threads.
     if os.path.exists(os.path.join(TEMP_DIR, f"{token}.mp4")):
         with active_tokens_mutex:
             active_tokens[token] = STATE_FINISHED
@@ -118,30 +119,30 @@ def run_ytclip(url: str, start: str, end: str, token: str) -> None:
             active_tokens[token] = STATE_ERROR
 
 
-@app.route("/", methods=["GET"])
-def api_default() -> Response:
-    """Returns the contents of the index.html file."""
-    content = get_file("index.html")
-    return Response(content, mimetype="text/html")
+@app.get("/")
+async def index() -> FileResponse:
+    """Returns index.html file"""
+    return FileResponse(os.path.join(HERE, "index.html"))
 
 
-@app.route("/preview.jpg", methods=["GET"])
-def api_preview() -> Response:
-    """Returns the contents of the preview.jpg file."""
-    content = get_file("preview.jpg")
-    return Response(content, mimetype="image/jpeg")
+@app.get("/preview.jpg")
+async def preview_jpg() -> FileResponse:
+    """Returns preview.jpg file"""
+    return FileResponse(os.path.join(HERE, "preview.jpg"))
 
 
 def get_current_thread_id() -> int:
     """Return the current thread id."""
-    return threading.currentThread().ident
+    ident = threading.current_thread().ident
+    if ident is None:
+        return -1
+    return int(ident)
 
 
-@app.route("/info")
-def api_info() -> Tuple[str, int, dict]:
+@app.get("/info")
+async def api_info() -> PlainTextResponse:
     """Returns the current time and the number of seconds since the server started."""
     now_time = datetime.datetime.now()
-    headers = {"content-type": "text/plain; charset=utf-8"}
     msg = "running\n"
     msg += "Example: localhost/clip\n"
     msg += "VERSION: " + VERSION + "\n"
@@ -150,102 +151,57 @@ def api_info() -> Tuple[str, int, dict]:
     msg += f"Current local time: {now_time}\n"
     msg += f"Process ID: { os.getpid()}\n"
     msg += f"Thread ID: { get_current_thread_id() }\n"
-    msg += f"\nRequest headers: {request.headers}\n"
-    return msg, 200, headers
+    return PlainTextResponse(content=msg)
 
 
-@app.route("/clip", methods=["GET", "POST", "PUT", "DELETE"])
-def api_clip() -> Tuple[str, int, dict]:
+@app.get("/clip")
+async def api_clip(start: str, end: str, url: str) -> PlainTextResponse:
     """Api endpoint to running the command."""
     # print(request)
-    try:
-        args = dict(request.form.items())
-        args.update(dict(request.args.items()))
-        url = args["url"]
-        start = args["start"]
-        end = args["end"]
-    except Exception as err:  # pylint: disable=broad-except
-        traceback.print_exc()
-        log_error(f"{err}")
-        return "invalid request", 400, {"content-type": "text/plain; charset=utf-8"}
     try:
         token = os.urandom(16).hex()
         with active_tokens_mutex:
             active_tokens[token] = STATE_PROCESSING
         task = lambda: run_ytclip(url=url, start=start, end=end, token=token)
         executor.submit(task)
-        return f"{token}", 200, {"content-type": "text/plain; charset=utf-8"}
+        return PlainTextResponse(token, status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
         traceback.print_exc()
         log_error(f"{exc}")
-        return "failed", 500, {"content-type": "text/plain; charset=utf-8"}
+        return PlainTextResponse(f"error: {exc}", status_code=500)
 
 
-@app.route("/clip/status/<token>", methods=["GET"])
-def api_clip_status(token) -> Tuple[str, int, dict]:
-    """Api endpoint to running the command."""
+@app.get("/clip/status/{token}")
+async def api_clip_status(token: str) -> PlainTextResponse:
+    """Non blocking method to check the status of a clip."""
     with active_tokens_mutex:
         status = active_tokens.get(token, None)
     if status is None:
-        return "not found", 200, {"content-type": "text/plain; charset=utf-8"}
+        return PlainTextResponse(content="token not found", status_code=404)
     if status == STATE_FINISHED:
-        return "ready for download", 200, {"content-type": "text/plain; charset=utf-8"}
+        return PlainTextResponse(content="ready for download", status_code=202)
     if status == STATE_PROCESSING:
-        return "still processing", 200, {"content-type": "text/plain; charset=utf-8"}
+        return PlainTextResponse(content="still processing", status_code=202)
     if status == STATE_ERROR:
-        return "error aborted", 200, {"content-type": "text/plain; charset=utf-8"}
-    return "unknown", 200, {"content-type": "text/plain; charset=utf-8"}
+        return PlainTextResponse(content="error aborted", status_code=500)
+    return PlainTextResponse(content="unexpected state", status_code=500)
 
 
-@app.route("/clip/download/<token>", methods=["GET"])
-def api_clip_download(token) -> Response:
+@app.get("/clip/download/{token}")
+async def api_clip_download(token) -> Response:
     """Download the clip if it's ready."""
     with active_tokens_mutex:
         status = active_tokens.get(token, None)
     if status is None:
-        return Response("not found", status=404, mimetype="text/plain; charset=utf-8")
+        return Response(status_code=404)
     if not status:
-        return Response("still processing", status=200, mimetype="text/plain; charset=utf-8")
+        return Response(content="still processing", status_code=202)
     # Download file to requester
-    name = f"{token}.mp4"
-    return send_from_directory(TEMP_DIR, name, as_attachment=True)
+    finished_file = os.path.join(TEMP_DIR, f"{token}.mp4")
+    return FileResponse(finished_file)
 
 
-@app.route("/version", methods=["GET"])
-def api_version() -> Response:
+@app.get("/version")
+async def api_version() -> PlainTextResponse:
     """Api endpoint for getting the version."""
-    return Response(f"{VERSION}", status=200, mimetype="text/plain; charset=utf-8")
-
-
-@app.route("/shutdown", methods=["GET"])
-def api_clip_shutdown() -> Response:
-    """Api endpoint for terminating the process."""
-
-    def kill_process():
-        """Kill the process."""
-        time.sleep(1)
-        os.kill(os.getpid(), signal.SIGTERM)
-
-    if not ALLOW_SHUTDOWN:
-        return Response("shutdown not allowed", status=403, mimetype="text/plain; charset=utf-8")
-    func = request.environ.get("werkzeug.server.shutdown")
-    if func is None:
-        func = kill_process
-    executor.submit(func)
-    return Response("shutdown", status=200, mimetype="text/plain; charset=utf-8")
-
-
-def main() -> None:
-    """Run the flask app."""
-    global ALLOW_SHUTDOWN  # pylint: disable=global-statement
-    parser = argparse.ArgumentParser(description="ytclip-server")
-    parser.add_argument("--port", type=int, default=None, help="port to listen on")
-    args = parser.parse_args()
-    port = args.port or int(os.environ.get("FLASK_PORT", DEFAULT_PORT))
-    ALLOW_SHUTDOWN = bool(int(os.environ.get("YTCLIP_SERVER_ALLOW_SHUTDOWN", "0")))
-    # Gracefully shutdown the flask app on SIGINT
-    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
-
-
-if __name__ == "__main__":
-    main()
+    return PlainTextResponse(VERSION)
