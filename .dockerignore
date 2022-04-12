@@ -1,0 +1,9 @@
+*.pyc
+dist
+build
+.tox
+.pytest_cache
+.mypy_cache
+.vscode
+tests
+.git

@@ -8,6 +8,7 @@ import os
 import shutil
 import signal
 import subprocess
+import threading
 import time
 import traceback
 from threading import Lock, Timer
@@ -131,6 +132,11 @@ def api_preview() -> Response:
     return Response(content, mimetype="image/jpeg")
 
 
+def get_current_thread_id() -> int:
+    """Return the current thread id."""
+    return threading.currentThread().ident
+
+
 @app.route("/info")
 def api_info() -> Tuple[str, int, dict]:
     """Returns the current time and the number of seconds since the server started."""
@@ -139,9 +145,11 @@ def api_info() -> Tuple[str, int, dict]:
     msg = "running\n"
     msg += "Example: localhost/clip\n"
     msg += "VERSION: " + VERSION + "\n"
-    msg += f"Launched at         {STARTUP_DATETIME}"
-    msg += f"\nCurrent utc time:   {datetime.datetime.utcnow()}"
-    msg += f"\nCurrent local time: {now_time}"
+    msg += f"Launched at         {STARTUP_DATETIME}\n"
+    msg += f"Current utc time:   {datetime.datetime.utcnow()}\n"
+    msg += f"Current local time: {now_time}\n"
+    msg += f"Process ID: { os.getpid()}\n"
+    msg += f"Thread ID: { get_current_thread_id() }\n"
     msg += f"\nRequest headers: {request.headers}\n"
     return msg, 200, headers
 

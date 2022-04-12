@@ -6,7 +6,7 @@
         {
             "label": "Run Dev",
             "type": "shell",
-            "command": "./run.sh",
+            "command": "./run_dev.sh",
             "group": "build",
             "options": {
                 "cwd": "${workspaceRoot}"
