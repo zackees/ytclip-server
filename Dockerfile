@@ -1,13 +1,14 @@
-FROM ubuntu:22.04
+# FROM ubuntu:22.04
+FROM python:3.10-slim-bullseye
 
 # Might be necessary.
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
 # Setup the image
-RUN apt-get update
+#RUN apt-get update
 # Ubuntu:22.04 uses python 3.10
-RUN apt-get install -y python-is-python3 python3-pip
+#RUN apt-get install -y python-is-python3 python3-pip
 
 WORKDIR /app
 
