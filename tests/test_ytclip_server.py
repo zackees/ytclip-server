@@ -12,10 +12,15 @@ from ytclip_server.version import VERSION
 
 APP_NAME = "ytclip_server.app:app"
 MY_IP = "127.0.0.1"
-PORT = 4422
+PORT = 4422  # Arbitrarily chosen.
 
 
-class Server(uvicorn.Server):
+# Surprisingly uvicorn does allow graceful shutdowns, making testing hard.
+# This class is the stack overflow answer to work around this limitiation.
+# Note: Running this in python 3.8 and below will cause the console to spew
+# scary warnings during test runs:
+#   ValueError: set_wakeup_fd only works in main thread
+class ServerWithShutdown(uvicorn.Server):
     """Adds a shutdown method to the uvicorn server."""
 
     def install_signal_handlers(self):
@@ -35,8 +40,9 @@ class Server(uvicorn.Server):
             thread.join()
 
 
-config = Config(APP_NAME, host=MY_IP, port=PORT, log_level="info", use_colors=False)
-server = Server(config=config)
+server = ServerWithShutdown(
+    config=Config(APP_NAME, host=MY_IP, port=PORT, log_level="info", use_colors=False)
+)
 
 
 class YtclipServerTester(unittest.TestCase):
@@ -44,7 +50,7 @@ class YtclipServerTester(unittest.TestCase):
 
     # @unittest.skip("Skip for now")
     def test_platform_executable(self) -> None:
-        """Opens up the ytclip-server and test that its running after one second."""
+        """Opens up the ytclip-server and tests that the version returned is correct."""
         with server.run_in_thread():
             time.sleep(1)
             version = requests.get(f"http://{MY_IP}:{PORT}/version").text
