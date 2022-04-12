@@ -26,9 +26,7 @@ with open(os.path.join(HERE, "README.md"), encoding="utf-8", mode="rt") as fd:
 with open(os.path.join(HERE, "requirements.txt"), encoding="utf-8", mode="rt") as fd:
     REQUIREMENTS = [line.strip() for line in fd.readlines() if line.strip()]
 
-with open(
-    os.path.join(HERE, "ytclip_server", "version.py"), encoding="utf-8", mode="rt"
-) as fd:
+with open(os.path.join(HERE, "ytclip_server", "version.py"), encoding="utf-8", mode="rt") as fd:
     for line in fd.readlines():
         if line.startswith("VERSION"):
             VERSION = line.split("=")[1].strip().strip('"')
@@ -96,7 +94,7 @@ setup(
     install_requires=REQUIREMENTS,
     entry_points={
         "console_scripts": [
-            "ytclip-server = ytclip_server.app:main",
+            "ytclip_server = ytclip_server.cmd:main",
         ],
     },
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
