@@ -16,7 +16,13 @@ from threading import Lock, Timer
 from typing import Dict
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse, PlainTextResponse, Response
+from fastapi.responses import (
+    FileResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
+from fastapi.staticfiles import StaticFiles
 
 from ytclip_server.version import VERSION
 
@@ -119,24 +125,35 @@ def run_ytclip(url: str, start: str, end: str, token: str) -> None:
             active_tokens[token] = STATE_ERROR
 
 
-@app.get("/")
-async def index() -> FileResponse:
-    """Returns index.html file"""
-    return FileResponse(os.path.join(HERE, "index.html"))
-
-
-@app.get("/preview.jpg")
-async def preview_jpg() -> FileResponse:
-    """Returns preview.jpg file"""
-    return FileResponse(os.path.join(HERE, "preview.jpg"))
-
-
 def get_current_thread_id() -> int:
     """Return the current thread id."""
     ident = threading.current_thread().ident
     if ident is None:
         return -1
     return int(ident)
+
+
+# Mount all the static files.
+app.mount("/www", StaticFiles(directory=os.path.join(HERE, "www")), "www")
+
+# Redirect to index.html
+@app.get("/")
+async def index() -> FileResponse:
+    """Returns index.html file"""
+    return RedirectResponse(url="/www/index.html")
+
+
+# Redirect to favicon.ico
+@app.get("/favicon.ico")
+async def favicon() -> FileResponse:
+    """Returns favico file."""
+    return RedirectResponse(url="/www/favicon.ico")
+
+
+@app.get("/version")
+async def api_version() -> PlainTextResponse:
+    """Api endpoint for getting the version."""
+    return PlainTextResponse(VERSION)
 
 
 @app.get("/info")
@@ -199,9 +216,3 @@ async def api_clip_download(token) -> Response:
     # Download file to requester
     finished_file = os.path.join(TEMP_DIR, f"{token}.mp4")
     return FileResponse(finished_file)
-
-
-@app.get("/version")
-async def api_version() -> PlainTextResponse:
-    """Api endpoint for getting the version."""
-    return PlainTextResponse(VERSION)
