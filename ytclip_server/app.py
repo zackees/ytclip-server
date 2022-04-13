@@ -58,7 +58,8 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 def file_age(filepath: str) -> float:
     """Return the age of a file."""
     return (
-        datetime.datetime.now() - datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
+        datetime.datetime.now()
+        - datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
     ).total_seconds()
 
 
