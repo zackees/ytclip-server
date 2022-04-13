@@ -8,6 +8,8 @@ __pycache__/
 
 app/temp/*
 
+activate.sh
+
 # Distribution / packaging
 .Python
 prod_env/
