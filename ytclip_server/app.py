@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Lock, Timer
 from typing import Dict
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import (
     FileResponse,
     PlainTextResponse,
@@ -136,16 +136,23 @@ def get_current_thread_id() -> int:
 # Mount all the static files.
 app.mount("/www", StaticFiles(directory=os.path.join(HERE, "www")), "www")
 
+
 # Redirect to index.html
 @app.get("/")
-async def index() -> FileResponse:
+async def index(request: Request) -> RedirectResponse:
     """Returns index.html file"""
-    return RedirectResponse(url="/www/index.html")
+    params = {item[0]: item[1] for item in request.query_params.multi_items()}
+    query = ""
+    for key, value in params.items():
+        if query == "":
+            query += "?"
+        query += f"{key}={value}&"
+    return RedirectResponse(url=f"/www/index.html{query}", status_code=302)
 
 
 # Redirect to favicon.ico
 @app.get("/favicon.ico")
-async def favicon() -> FileResponse:
+async def favicon() -> RedirectResponse:
     """Returns favico file."""
     return RedirectResponse(url="/www/favicon.ico")
 
