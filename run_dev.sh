@@ -1,4 +1,3 @@
-#!/usr/bin/sh
 set -e
 cd $( dirname ${BASH_SOURCE[0]})
 python -m webbrowser -t "http://127.0.0.1:80"
