@@ -1,4 +1,4 @@
 include requirements.txt
 include requirements.testing.txt
-include ytclip_server/index.html
-include ytclip_server/preview.jpg
+include ytclip_server/www/index.html
+include ytclip_server/www/preview.jpg
