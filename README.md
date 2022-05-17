@@ -1,7 +1,5 @@
 # ytclip-server
 
-# ytclip
-
 [![Actions Status](https://github.com/zackees/ytclip-server/workflows/MacOS_Tests/badge.svg)](https://github.com/zackees/ytclip-server/actions/workflows/push_macos.yml)
 [![Actions Status](https://github.com/zackees/ytclip-server/workflows/Win_Tests/badge.svg)](https://github.com/zackees/ytclip-server/actions/workflows/push_win.yml)
 [![Actions Status](https://github.com/zackees/ytclip-server/workflows/Ubuntu_Tests/badge.svg)](https://github.com/zackees/ytclip-server/actions/workflows/push_ubuntu.yml)
