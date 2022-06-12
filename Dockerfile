@@ -17,7 +17,7 @@ RUN static_ffmpeg -version
 # Add requirements file and install.
 COPY . .
 
-RUN python -m pip install -e .
+RUN python -m pip install --no-cache-dir -e .
 
 # Expose the port and then launch the app.
 EXPOSE 80
