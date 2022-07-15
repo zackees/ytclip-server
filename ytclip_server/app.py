@@ -187,7 +187,7 @@ async def api_clip(start: str, end: str, url: str) -> PlainTextResponse:
         token = os.urandom(16).hex()
         with active_tokens_mutex:
             active_tokens[token] = STATE_PROCESSING
-        task = lambda: run_ytclip(url=url, start=start, end=end, token=token)
+        task = lambda: run_ytclip(url=url, start=start, end=end, token=token)  # pylint: disable=unnecessary-lambda-assignment
         executor.submit(task)
         return PlainTextResponse(token, status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
