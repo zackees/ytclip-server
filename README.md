@@ -5,7 +5,14 @@
 [![Actions Status](https://github.com/zackees/ytclip-server/workflows/Ubuntu_Tests/badge.svg)](https://github.com/zackees/ytclip-server/actions/workflows/push_ubuntu.yml)
 
 
-Docker http server running [ytclip](https://github.com/zackees/ytclip)
+Docker http server running [ytclip](https://github.com/zackees/ytclip).
+
+![image](https://user-images.githubusercontent.com/6856673/196817552-1442f477-6251-4da0-b726-c9e86ed80fd4.png)
+
+This repo has been tested with DigitalOcean and Render.com zero-config docker apps. Fork the repo then use the repo, the Docker app will be detected automatically.
+
+
+
 
 # Demo
 
