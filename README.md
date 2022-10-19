@@ -12,27 +12,27 @@ Docker http server running [ytclip](https://github.com/zackees/ytclip).
 This repo has been tested with DigitalOcean and Render.com zero-config docker apps. Fork the repo then use the repo, the Docker app will be detected automatically.
 
 
-
-
-# Demo
-
-  * `pip install ytclip-server`
-  * `ytclip-server --port 1234`
-  * Now open up `http://127.0.0.1:1234` in a browser.
-
-# Demo from github
-
-  * `git clone https://github.com/zackees/ytclip-server`
-  * `cd ytclip-server`
-  * `pip install -e .`
-  * `run_dev.sh` (Browser will open up automatically)
-
-# Docker Production test
+# Docker
 
   * `git clone https://github.com/zackees/ytclip-server`
   * `cd ytclip-server`
   * `docker-compose up`
   * Now open up `http://127.0.0.1:80/`
+
+# Non docker
+
+## Using pip
+
+  * `pip install ytclip-server`
+  * `ytclip-server --port 1234`
+  * Now open up `http://127.0.0.1:1234` in a browser.
+
+## Using github
+
+  * `git clone https://github.com/zackees/ytclip-server`
+  * `cd ytclip-server`
+  * `pip install -e .`
+  * `run_dev.sh` (Browser will open up automatically)
 
 # Full Tests + linting
 
