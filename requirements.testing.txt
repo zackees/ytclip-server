@@ -1,4 +1,4 @@
-flake8
+flake8<6.0
 mypy
 pylint
 pytest
